@@ -22,7 +22,7 @@
       ],
       "id": "3e142c5e-4544-4c4e-9c09-63c7476d1f43",
       "name": "On form submission",
-      "webhookId": "54380935-4f67-4ee4-9f80-db6091feba3a"
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID"
     },
     {
       "parameters": {
@@ -45,8 +45,8 @@
       "name": "Supabase Vector Store",
       "credentials": {
         "supabaseApi": {
-          "id": "sxsx2IrcAIuyGwK1",
-          "name": "Supabase account"
+          "id": "REPLACE_WITH_YOUR_SUPABASE_ID",
+          "name": "REPLACE_WITH_YOUR_SUPABASE_NAME"
         }
       }
     },
@@ -64,8 +64,8 @@
       "name": "Embeddings OpenAI",
       "credentials": {
         "openAiApi": {
-          "id": "dvkpaAbq123GMflk",
-          "name": "n8n free OpenAI API credits"
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_OPENAI_CREDENTIAL_NAME"
         }
       }
     },
@@ -95,7 +95,7 @@
       ],
       "id": "5170dfaf-2618-4188-b26e-a472747f990c",
       "name": "When chat message received",
-      "webhookId": "6e0cca3c-bbe7-4f75-bf47-2d0cd925f49c"
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID"
     },
     {
       "parameters": {
@@ -132,8 +132,8 @@
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
-          "id": "dvkpaAbq123GMflk",
-          "name": "n8n free OpenAI API credits"
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_OPENAI_CREDENTIAL_NAME"
         }
       }
     },
@@ -160,8 +160,8 @@
       "name": "Supabase Vector Store1",
       "credentials": {
         "supabaseApi": {
-          "id": "sxsx2IrcAIuyGwK1",
-          "name": "Supabase account"
+          "id": "REPLACE_WITH_YOUR_SUPABASE_ID",
+          "name": "REPLACE_WITH_YOUR_SUPABSE_ACCOUNT"
         }
       }
     },
@@ -179,8 +179,8 @@
       "name": "Embeddings OpenAI1",
       "credentials": {
         "openAiApi": {
-          "id": "dvkpaAbq123GMflk",
-          "name": "n8n free OpenAI API credits"
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_OPENAI_CREDENTIAL_NAME"
         }
       }
     }
