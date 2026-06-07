@@ -1,0 +1,498 @@
+{
+  "name": "Linkedin Scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 16],
+      "id": "ad66a46b-2018-4a2c-a5fb-a224a332c84f",
+      "name": "When chat message received",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "226ae9a0-f58c-4d60-aff0-907f8cd351ae",
+              "name": "mode",
+              "value": "jobs",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [224, 16],
+      "id": "f2c83c1b-0acb-4d15-976c-e864565502c0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "## Set Mode\n**Set this to either jobs or profiles\n",
+        "height": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [152, -144],
+      "typeVersion": 1,
+      "id": "6d0ffa2e-3246-44f1-9e09-cb2e197f0a3f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7ca26dbe-85cb-48f6-a766-84f532b9f314",
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "jobs",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [448, 16],
+      "id": "1c447e51-a490-4cf0-b23d-4bb68ee8b8cd",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7c417176-8939-4995-aba3-d7446d7ff10e",
+              "name": "prompt",
+              "value": "You are an expert in Boolean search techniques for Google. When the user sends a job description, generate a search string specifically for finding Linkedin posts that match that description. \nYour response must always follow this exact format: site:linkedin.com/jobs [Boolean search string] Create the Boolean search string using precise operators (AND, OR, \"\", *, -) to match the job requirements. \nocus only on generating the search string - provide no additional commentary or explanations unless specifically requested.  Also return sheet_name (less than 100 char)\n\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [672, -104],
+      "id": "8f346771-3c07-4af7-9687-783c84026825",
+      "name": "Set Jobs Prompt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "291985bf-9cf4-40bf-85ee-032e28a43d68",
+              "name": "prompt",
+              "value": "You are an expert in Boolean search techniques for Google. When the user sends a job description, generate a search string specifically for finding LinkedIn job profiles that match that description. \nYour response must always follow this exact format: site:linkedin.com/in [Boolean search string] Create the Boolean search string using precise operators (AND, OR, \"\", *, -) to match the job requirements. \nFocus only on generating the search string - provide no additional commentary or explanations unless specifically requested.  Also return sheet_name (less than 100 char) \n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [672, 88],
+      "id": "cf028bdd-fc6a-4dd7-b6f9-157d9f89646f",
+      "name": "Set Profiles Promt"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.1-flash-lite-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.1-flash-lite-preview"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $('When chat message received').item.json.chatInput }}"
+            },
+            {
+              "content": "={{ $json.prompt }}",
+              "role": "model"
+            }
+          ]
+        },
+        "simplify": false,
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [896, 16],
+      "id": "030d0f8f-cede-4065-86af-7cab4ae3a2b6",
+      "name": "Message a model",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Scrapes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "title": "={{ JSON.parse($('Message a model').item.json.candidates[0].content.parts[0].text).sheet_name }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [1248, 16],
+      "id": "69014e00-d484-42d6-9d04-a9e0bc039655",
+      "name": "Create sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_SHEETS_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    \"linkedin_url\": \"\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1472, 16],
+      "id": "f699353e-ed9b-43c8-929c-7c21a1652be5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Scrapes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Create sheet').item.json.sheetId }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": ["linkedin_url"],
+          "schema": [
+            {
+              "id": "linkedin_url",
+              "displayName": "linkedin_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [1696, 16],
+      "id": "06688548-fbcf-4e08-b5ed-7e7b758d9656",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_SHEETS_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { start: 0 } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 16],
+      "id": "3bfccab4-5595-4b4a-961b-5025f4343fc9",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "535f3b73-c590-4ba3-9145-67b7dbb2c26d",
+              "leftValue": "={{ $json.start }}",
+              "rightValue": 15,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [2144, 16],
+      "id": "f62863b6-012a-4b3e-8924-b6c4f6e7f450",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "content": "## How many Links?\n",
+        "height": 224,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [2072, -48],
+      "typeVersion": 1,
+      "id": "ed01c701-c994-452d-9e18-86e690eaf2ad",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "message": "Completed",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1.3,
+      "position": [2368, 16],
+      "id": "495db828-9edd-4328-93a2-9b7162fd1479",
+      "name": "Chat",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_SERPER_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ JSON.parse($('Message a model').item.json.candidates[0].content.parts[0].text).search_string }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [2368, -176],
+      "id": "7181c485-9ea9-460a-a446-7a2aadf45b75",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all items from the entire input\nconst allItems = $input.all();\n\n// Extract links from organic search results\nconst organicResults = allItems[0]?.json?.organic || [];\nconst links = organicResults.map(result => result.link);\n\n// Return as individual output items with linkedin_url field\nreturn links.map(link => ({ json: { linkedin_url: link } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2592, -176],
+      "id": "0fb36a07-0959-4836-b16d-15e1f607583c",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Scrapes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Create sheet').item.json.sheetId }}",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": ["linkedin_url"],
+          "schema": [
+            {
+              "id": "linkedin_url",
+              "displayName": "linkedin_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [2816, -176],
+      "id": "6650eee7-1e79-4456-83f8-c5bc5a7df052",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_SHEETS_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [3040, -176],
+      "id": "4fd69cb3-c83b-475e-a8d9-11c9cd2c4406",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the start value from 'Edit Fields2' node\nconst startValue = $('If1').first().json.start\n// Add 10 to the start value\nconst start = startValue + 10;\n \n// Return the new value\nreturn { json: { start } };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3264, -176],
+      "id": "4a0462ae-51a1-4467-8b14-758d576ad8d6",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3488, -8],
+      "id": "972ef03d-006f-4aed-baa7-b8b6dc3c9da6",
+      "name": "Wait",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [[{"node": "Edit Fields", "type": "main", "index": 0}]]
+    },
+    "Edit Fields": {
+      "main": [[{"node": "If", "type": "main", "index": 0}]]
+    },
+    "If": {
+      "main": [
+        [{"node": "Set Jobs Prompt", "type": "main", "index": 0}],
+        [{"node": "Set Profiles Promt", "type": "main", "index": 0}]
+      ]
+    },
+    "Set Jobs Prompt": {
+      "main": [[{"node": "Message a model", "type": "main", "index": 0}]]
+    },
+    "Set Profiles Promt": {
+      "main": [[{"node": "Message a model", "type": "main", "index": 0}]]
+    },
+    "Message a model": {
+      "main": [[{"node": "Create sheet", "type": "main", "index": 0}]]
+    },
+    "Create sheet": {
+      "main": [[{"node": "Code in JavaScript", "type": "main", "index": 0}]]
+    },
+    "Code in JavaScript": {
+      "main": [[{"node": "Append row in sheet", "type": "main", "index": 0}]]
+    },
+    "Append row in sheet": {
+      "main": [[{"node": "Code in JavaScript1", "type": "main", "index": 0}]]
+    },
+    "Code in JavaScript1": {
+      "main": [[{"node": "If1", "type": "main", "index": 0}]]
+    },
+    "If1": {
+      "main": [
+        [{"node": "HTTP Request", "type": "main", "index": 0}],
+        [{"node": "Chat", "type": "main", "index": 0}]
+      ]
+    },
+    "HTTP Request": {
+      "main": [[{"node": "Code in JavaScript2", "type": "main", "index": 0}]]
+    },
+    "Code in JavaScript2": {
+      "main": [[{"node": "Append row in sheet1", "type": "main", "index": 0}]]
+    },
+    "Append row in sheet1": {
+      "main": [[{"node": "Aggregate", "type": "main", "index": 0}]]
+    },
+    "Aggregate": {
+      "main": [[{"node": "Code in JavaScript3", "type": "main", "index": 0}]]
+    },
+    "Code in JavaScript3": {
+      "main": [[{"node": "Wait", "type": "main", "index": 0}]]
+    },
+    "Wait": {
+      "main": [[{"node": "If1", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "REPLACE_WITH_YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID"
+  },
+  "id": "REPLACE_WITH_YOUR_WORKFLOW_ID",
+  "tags": []
+}
