@@ -96,4 +96,4 @@ The approved reply is sent back to the original sender with the subject prefixed
 Credentials and API keys are not included in this repository.  
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
 The workflow polls every minute by default — adjust the poll interval in the Gmail Trigger node to suit your needs.  
-This project is intended for educational and portfolio purposes.
+This project is intended for educational and test purposes.
