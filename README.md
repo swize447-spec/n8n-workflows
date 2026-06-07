@@ -65,5 +65,5 @@ The AI agent:
 
 Credentials and API keys are not included in this repository.
 
-This project is intended for educational and portfolio purposes.
+This project is intended for educational purpose.
 
