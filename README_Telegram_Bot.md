@@ -90,4 +90,4 @@ Sends the AI-generated response back to the user in the same Telegram chat.
 Credentials and API keys are not included in this repository.  
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
 The conversation memory resets with each new n8n execution — for persistent memory across sessions, consider replacing the Simple Memory node with a database-backed memory solution.  
-This project is intended for educational and portfolio purposes.
+This project is intended for educational and test purposes.
