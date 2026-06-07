@@ -105,4 +105,4 @@ Converts the user's query into embeddings for semantic similarity search against
 Credentials and API keys are not included in this repository.  
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
 The document ingestion and chat assistant are two separate triggers — run the ingestion pipeline first before using the chat assistant.  
-This project is intended for educational and portfolio purposes.
+This project is intended for educational and test purposes.
