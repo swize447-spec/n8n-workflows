@@ -91,4 +91,4 @@ The resume URL response is evaluated:
 Credentials and API keys are not included in this repository.  
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
 The `$execution.resumeUrl` is generated dynamically at runtime by n8n — no hardcoded URLs are needed.  
-This project is intended for educational purposes.
+This project is intended for educational and test purposes.
