@@ -1,0 +1,205 @@
+{
+  "name": "Meme generator",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [0, 0],
+      "id": "21df9daa-c2a0-46d9-b98c-c9aa8dedd347",
+      "name": "When chat message received",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [240, 224],
+      "id": "f632cea6-9266-440c-b5c1-58126edc43e5",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"description\": \"Description of the meme\",\n\t\"text\": \"Text for the image\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [368, 224],
+      "id": "0c644925-fce2-4b0e-a4e2-a649633f0185",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a meme generator bot. You make memes that are funny and entertaining.\n \nYou only job is to create the meme, and let the image generation to other agents.\n \nThe meme will have a single image, with text overlayed on top of it.\n \nFirst, come up with an idea of a funny meme based on the user input.\n \nGenerate a description of the meme.\n Then generate a text, that will be overlayed on top of the image. The text must be a single line, and quite short and punchy.\n \nOutput the content you generated based on the output structure "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [224, 0],
+      "id": "37140421-a5e9-43aa-b428-c50ab2721abc",
+      "name": "Meme Generator"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output.description }}",
+        "options": {
+          "systemMessage": "You are a bot that's part of a system for generating memes. The memes are funny, entertaining and relatable.\n \nThe meme will have a single image, with text overlayed on top of it.\n \nYour job is to create a description for an image of this meme to be generated. \n \nBased on the meme description, generate an instruction for an image generation system to create an image.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [576, 0],
+      "id": "9cc99fc9-0189-4beb-b3f2-7d93ef933aec",
+      "name": "Prompt Generator"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8a9b0642-ac77-4372-b2e1-246427c42deb",
+              "name": "model",
+              "value": "stable-diffusion-xl-v1",
+              "type": "string"
+            },
+            {
+              "id": "3f00ddfc-0147-41a9-ac8a-1fe23d7cc401",
+              "name": "prompt",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "b60df42b-a4c0-40ff-8c18-8af37d0be22e",
+              "name": "output_format",
+              "value": "png",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [928, 0],
+      "id": "09f7f7a6-787f-46f7-9cc9-8212aa918f00",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stability.ai/v2beta/stable-image/generate/core",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "accept",
+              "value": "image/*"
+            },
+            {
+              "name": "Content-Type",
+              "value": "multipart/form-data"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.prompt }}"
+            },
+            {
+              "name": "output_format",
+              "value": "={{ $json.output_format }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1152, 0],
+      "id": "554487c3-6adf-4dc7-94fc-a3a77b2356f5",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_STABILITY_AI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "text": "={{ $('Meme Generator').item.json.output.text }}",
+        "fontSize": 100,
+        "fontColor": "#F8F4F4",
+        "positionY": 100,
+        "lineLength": 30,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [1376, 0],
+      "id": "971787aa-94b2-4450-b621-a642edcb72e4",
+      "name": "Edit Image"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [[{"node": "Meme Generator", "type": "main", "index": 0}]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {"node": "Meme Generator", "type": "ai_languageModel", "index": 0},
+          {"node": "Prompt Generator", "type": "ai_languageModel", "index": 0}
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [[{"node": "Meme Generator", "type": "ai_outputParser", "index": 0}]]
+    },
+    "Meme Generator": {
+      "main": [[{"node": "Prompt Generator", "type": "main", "index": 0}]]
+    },
+    "Prompt Generator": {
+      "main": [[{"node": "Edit Fields", "type": "main", "index": 0}]]
+    },
+    "Edit Fields": {
+      "main": [[{"node": "HTTP Request", "type": "main", "index": 0}]]
+    },
+    "HTTP Request": {
+      "main": [[{"node": "Edit Image", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "REPLACE_WITH_YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID"
+  },
+  "id": "REPLACE_WITH_YOUR_WORKFLOW_ID",
+  "tags": []
+}
