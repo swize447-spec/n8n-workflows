@@ -82,4 +82,4 @@ The `application_id` and `token` are extracted dynamically from the original web
 Credentials and API keys are not included in this repository.  
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
 The `application_id` and interaction `token` are passed automatically by Discord at runtime — they do not need to be stored.  
-This project is intended for educational and portfolio purposes.
+This project is intended for educational and test purposes.
