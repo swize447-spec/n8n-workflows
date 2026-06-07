@@ -94,4 +94,4 @@ Overlays the AI-generated meme text onto the generated image:
 
 Credentials and API keys are not included in this repository.  
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
-This project is intended for educational and portfolio purposes.
+This project is intended for educational and test purposes.
