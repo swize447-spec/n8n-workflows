@@ -121,4 +121,4 @@ Sends a "Completed" message back to the n8n chat interface when all pages have b
 Credentials and API keys are not included in this repository.  
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
 The pagination limit is set to `15` by default in the **If1** node — adjust this value to scrape more or fewer results.  
-This project is intended for educational purposes. Users are responsible for ensuring their usage complies with LinkedIn's Terms of Service.
+This project is intended for educational and test purposes. Users are responsible for ensuring their usage complies with LinkedIn's Terms of Service.
