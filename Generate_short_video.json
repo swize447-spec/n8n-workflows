@@ -1,0 +1,421 @@
+{
+  "name": "Generate a short video",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [-1040, 448],
+      "id": "2405b4b4-96a6-4df0-8179-1b2547e8fbf1",
+      "name": "When chat message received",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-736, 672],
+      "id": "5085908e-8902-4fa4-a463-e181c9b58b97",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Generate 1 interesting fact about the world suitable for a YouTube Short.\nUse enough words for exatcly 30 seconds, but do not exceed 30 seconds.\nMake it engaging and surprising."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-816, 448],
+      "id": "b3543dab-ad6f-493d-bda3-c327313964b6",
+      "name": "Generate topic"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "Turn this into a short video script.\n\nFormat:\n{\n  \"title\": \"...\",\n  \"script\": \"...\",\n  \"scenes\": [\n    { \"text\": \"...\", \"visual\": \"...\" }\n  ]\n}\n\n\nSTRICT RULES:\n- Maximum 85-90 words\n- Target duration: 29-30 seconds\n- Short sentences\n- No filler words\n- Fast-paced narration\n- Make it valid JSON string, do not include triple backticks (```).\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [-464, 448],
+      "id": "27baafc6-9f67-41a7-8f58-5fd3509f6498",
+      "name": "Generate script (structured)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3fb2cd19-213c-4842-a323-18cd0e5efaa2",
+              "name": "parsed",
+              "value": "={{ JSON.parse($json.output) }}",
+              "type": "string"
+            },
+            {
+              "id": "7a6ec3d3-9557-431c-ab59-75c51b23058a",
+              "name": "title",
+              "value": "={{ JSON.parse($json.output).title }}",
+              "type": "string"
+            },
+            {
+              "id": "f3f42607-71e5-41c9-ad75-1c21fd40e67f",
+              "name": "script",
+              "value": "={{ JSON.parse($json.output).script }}",
+              "type": "string"
+            },
+            {
+              "id": "89f6486d-b073-4ea4-b033-378687987897",
+              "name": "scenes",
+              "value": "={{ JSON.parse($json.output).scenes }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-176, 448],
+      "id": "1b0c46e7-722a-4a07-bf57-12b98ba4ee64",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://texttospeech.googleapis.com/v1/text:synthesize?key=YOUR_GOOGLE_TTS_API_KEY",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"input\": {\n    \"text\": {{ JSON.stringify($json.script) }}\n  },\n  \"voice\": {\n    \"languageCode\": \"en-US\",\n    \"name\": \"en-US-Neural2-D\"\n  },\n  \"audioConfig\": {\n    \"audioEncoding\": \"MP3\",\n    \"speakingRate\": 1.05,\n    \"pitch\": 0\n  }\n}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [112, 448],
+      "id": "464652ee-42f0-489a-8051-57077b5a6cdd",
+      "name": "Text to speech"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "audioContent",
+        "options": {
+          "fileName": "audio.mp3",
+          "mimeType": "audio/mpeg"
+        }
+      },
+      "id": "52870ae6-7614-44d3-b257-f9368c9bdbe6",
+      "name": "Convert Audio to Binary",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [304, 448]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/YOUR_CLOUDINARY_CLOUD_NAME/auto/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "upload_preset",
+              "value": "YOUR_CLOUDINARY_UPLOAD_PRESET"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [512, 448],
+      "id": "b7bfb05a-7b55-43e7-8cce-afa5728b128f",
+      "name": "Generate URL for Download"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fee25716-c153-4d40-9967-66155c472180",
+              "name": "secure_url",
+              "value": "={{ $json.secure_url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [720, 448],
+      "id": "8f2fee29-0e65-467e-9321-3ce8fdd96e49",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const scenes = $json.scenes;\n\nreturn [\n  {\n    json: {\n      scenes: scenes.map(scene => ({\n        text: scene.text,\n        visual: scene.visual\n      }))\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [112, 784],
+      "id": "57b527a1-6d81-47e4-9be9-ef99956a7c94",
+      "name": "Code in JavaScript",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $input.all();\nconst scenes = inputData[0].json.scenes;\n\nfunction extractKeyWords(visualDescription) {\n  const stopWords = new Set([\n    'a', 'an', 'the', 'of', 'to', 'in', 'on', 'at', 'for', 'with',\n    'its', 'or', 'and', 'but', 'is', 'are', 'was', 'were', 'be',\n    'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',\n    'will', 'would', 'could', 'should', 'may', 'might', 'shall',\n    'from', 'by', 'as', 'into', 'through', 'each', 'not', 'show',\n    'showing', 'footage', 'shot', 'clip', 'clips', 'perhaps', 'quick',\n    'transition', 'close-up', 'final', 'iconic', 'including'\n  ]);\n\n  const words = visualDescription\n    .toLowerCase()\n    .replace(/[^a-z\\s]/g, '')\n    .split(/\\s+/)\n    .filter(word => word.length > 2 && !stopWords.has(word));\n\n  return words.slice(0, 4).join(' ');\n}\n\nconst results = scenes.map((scene, index) => ({\n  sceneIndex: index + 1,\n  text: scene.text,\n  visual: scene.visual,\n  pexelsSearchTerm: extractKeyWords(scene.visual)\n}));\n\nreturn results.map(item => ({ json: item }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 784],
+      "id": "74e33042-239f-481b-a676-ba1ca8cc5d8a",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.pexelsSearchTerm }}"
+            },
+            {
+              "name": "per_page",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "YOUR_PEXELS_API_KEY"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [656, 784],
+      "id": "40931344-89f6-4b68-a2d8-91c42fa45d4f",
+      "name": "Pexels request"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "49885d7a-8c83-45a7-92fd-d5b7e833c264",
+              "name": "image_url",
+              "value": "={{ $json.photos[0].src.portrait }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [896, 784],
+      "id": "2cf054af-9664-4ab6-a1b4-ae6c34d74c37",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [1216, 544],
+      "id": "16c4cfc9-eea5-494e-a744-085345832883",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "let images = [];\nlet audioUrl = null;\n\nfor (const item of items) {\n  if (item.json.image_url) {\n    images.push(item.json.image_url);\n  }\n  if (item.json.secure_url) {\n    audioUrl = item.json.secure_url;\n  }\n}\n\nif (!images.length) throw new Error(\"No images found\");\nif (!audioUrl) throw new Error(\"No audio URL found\");\n\nconst totalDuration = 30;\nconst duration = totalDuration / images.length;\n\nconst clips = images.map((img, i) => ({\n  asset: { type: \"image\", src: img },\n  start: i * duration,\n  length: duration\n}));\n\nreturn [\n  {\n    json: {\n      timeline: {\n        tracks: [\n          { clips },\n          {\n            clips: [\n              {\n                asset: { type: \"audio\", src: audioUrl },\n                start: 0,\n                length: images.length * duration\n              }\n            ]\n          }\n        ]\n      },\n      output: {\n        format: \"mp4\",\n        resolution: \"hd\",\n        aspectRatio: \"9:16\"\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1440, 544],
+      "id": "0d845eaf-2be4-4731-aef8-7a7024a634ac",
+      "name": "Build Shotstack body"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.shotstack.io/edit/stage/render",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_SHOTSTACK_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "timeline",
+              "value": "={{ $('Build Shotstack body').item.json.timeline }}"
+            },
+            {
+              "name": "output",
+              "value": "={{ $('Build Shotstack body').item.json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [1664, 544],
+      "id": "9bd17e65-448a-4e4e-a366-843fdecd2cd4",
+      "name": "Shotstack Request"
+    },
+    {
+      "parameters": {
+        "content": "## Audio\n**Generating Audio",
+        "height": 304,
+        "width": 832,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [0, 336],
+      "typeVersion": 1,
+      "id": "518409b8-0c66-4225-afde-897256182dd7",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Image\n**Image generation\n",
+        "height": 288,
+        "width": 1012,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [0, 672],
+      "typeVersion": 1,
+      "id": "a9062e16-82ab-4754-bdad-781e81fd3d29",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [[{"node": "Generate topic", "type": "main", "index": 0}]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {"node": "Generate topic", "type": "ai_languageModel", "index": 0},
+          {"node": "Generate script (structured)", "type": "ai_languageModel", "index": 0}
+        ]
+      ]
+    },
+    "Generate topic": {
+      "main": [[{"node": "Generate script (structured)", "type": "main", "index": 0}]]
+    },
+    "Generate script (structured)": {
+      "main": [[{"node": "Edit Fields", "type": "main", "index": 0}]]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {"node": "Text to speech", "type": "main", "index": 0},
+          {"node": "Code in JavaScript", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "Text to speech": {
+      "main": [[{"node": "Convert Audio to Binary", "type": "main", "index": 0}]]
+    },
+    "Convert Audio to Binary": {
+      "main": [[{"node": "Generate URL for Download", "type": "main", "index": 0}]]
+    },
+    "Generate URL for Download": {
+      "main": [[{"node": "Edit Fields2", "type": "main", "index": 0}]]
+    },
+    "Edit Fields2": {
+      "main": [[{"node": "Merge", "type": "main", "index": 0}]]
+    },
+    "Code in JavaScript": {
+      "main": [[{"node": "Code in JavaScript1", "type": "main", "index": 0}]]
+    },
+    "Code in JavaScript1": {
+      "main": [[{"node": "Pexels request", "type": "main", "index": 0}]]
+    },
+    "Pexels request": {
+      "main": [[{"node": "Edit Fields1", "type": "main", "index": 0}]]
+    },
+    "Edit Fields1": {
+      "main": [[{"node": "Merge", "type": "main", "index": 1}]]
+    },
+    "Merge": {
+      "main": [[{"node": "Build Shotstack body", "type": "main", "index": 0}]]
+    },
+    "Build Shotstack body": {
+      "main": [[{"node": "Shotstack Request", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "REPLACE_WITH_YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID"
+  },
+  "id": "REPLACE_WITH_YOUR_WORKFLOW_ID",
+  "tags": []
+}
