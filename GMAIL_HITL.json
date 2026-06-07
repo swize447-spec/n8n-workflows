@@ -1,0 +1,229 @@
+{
+  "name": "GMAIL HITL",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [0, -144],
+      "id": "12c76d13-d04c-497c-98fa-c32bf275ff3d",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GMAIL_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.snippet }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [224, -144],
+      "id": "3bf1cb24-d1f0-4fc9-ae4a-49ceeb14f2c7",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "operationMode": "nodeInputBinary",
+        "options": {
+          "binaryDataKey": "={{ $json.data }}",
+          "summarizationMethodAndPrompts": {
+            "values": {
+              "combineMapPrompt": "=Write a concise summary of the following in max 100 words:\n \n{{ $json.data }}\n \nDo not enter the total number of words used. ",
+              "prompt": "=Write a concise summary of the following in max 100 words:\n \n{{ $json.data }}\n \nDo not enter the total number of words used. "
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "typeVersion": 2.1,
+      "position": [448, -144],
+      "id": "7d358834-fc1a-4e5e-9db7-f911c2a39458",
+      "name": "Summarization Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [528, 96],
+      "id": "d5dec73d-599d-488a-bec8-f567298a6665",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_OPENAI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [800, -144],
+      "id": "bee75d6c-c0cf-442c-9083-31532a29bd91",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Summarization Chain').item.json.output.text }}",
+        "options": {
+          "systemMessage": "You are an expert at answering emails. You need to answer professionally based on the information you have. This is a business email. Be concise and never exceed 100 words. Write only the body of the email, do not create the subject.\n \nThe output must be in HTML format and you can insert only HTML characters such as <br>, <b>, <i>, <p> where necessary and appropriate.\n \nWrite the text to reply to the email in the prompt."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [1024, -128],
+      "id": "00df09b3-8642-444e-805e-070aacbabb70",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "YOUR_APPROVAL_EMAIL",
+        "subject": "=[Approval Required]  {{ $('Gmail Trigger').item.json.Subject }}",
+        "message": "=Original Email\n\n {{ $('Gmail Trigger').item.json.snippet }}\n\n\nAI Reply\n\n{{ $json.output }}",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1376, -208],
+      "id": "ce24448f-0473-4414-8c83-91335e52292d",
+      "name": "Send message and wait for response",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GMAIL_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3302041a-fa5a-4aaa-9571-dff7127070af",
+              "leftValue": "={{ $json.data.approved }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [1600, -144],
+      "id": "10fbe948-7321-493b-8a97-2a3c53ae8d08",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Gmail Trigger').item.json.From }}",
+        "subject": "=RE:  {{ $('Gmail Trigger').item.json.Subject }}",
+        "message": "={{ $('AI Agent').item.json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [1824, -144],
+      "id": "e94d9a14-fc69-4b2f-a3e7-7314d0befbaa",
+      "name": "Send a message",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GMAIL_CREDENTIAL_NAME"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [[{"node": "Markdown", "type": "main", "index": 0}]]
+    },
+    "Markdown": {
+      "main": [[{"node": "Summarization Chain", "type": "main", "index": 0}]]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {"node": "Summarization Chain", "type": "ai_languageModel", "index": 0},
+          {"node": "AI Agent", "type": "ai_languageModel", "index": 0}
+        ]
+      ]
+    },
+    "Summarization Chain": {
+      "main": [[{"node": "Edit Fields", "type": "main", "index": 0}]]
+    },
+    "Edit Fields": {
+      "main": [[{"node": "AI Agent", "type": "main", "index": 0}]]
+    },
+    "AI Agent": {
+      "main": [[{"node": "Send message and wait for response", "type": "main", "index": 0}]]
+    },
+    "Send message and wait for response": {
+      "main": [[{"node": "If", "type": "main", "index": 0}]]
+    },
+    "If": {
+      "main": [
+        [{"node": "Send a message", "type": "main", "index": 0}],
+        [{"node": "Edit Fields", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "REPLACE_WITH_YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID"
+  },
+  "id": "REPLACE_WITH_YOUR_WORKFLOW_ID",
+  "tags": []
+}
