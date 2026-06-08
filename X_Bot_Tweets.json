@@ -1,0 +1,136 @@
+{
+  "name": "X Bot tweets",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "891917c8-ba52-4750-afc1-37d935562f99",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "url": "https://news.google.com/rss/search?q=AI+tools",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [144, 0],
+      "id": "7e1e87b9-5263-45b0-8bad-0ba2c97ab146",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [304, 0],
+      "id": "b7a07954-b14a-40fd-ac69-a759092e1ce9",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "jsCode": "const articles = items.map(item => {\n  // Sanitize title - remove non-ASCII characters\n  const cleanTitle = item.json.title\n    .replace(/[^\\x00-\\x7F]/g, '')\n    .trim();\n\n  return `• ${cleanTitle} — ${item.json.link}`;\n});\n\nconst prompt = articles.join('\\n');\n\nreturn [\n  {\n    json: {\n      rss_summary_prompt: prompt\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [464, 0],
+      "id": "65e7f6e6-1fe4-40f2-af9e-8d23e22a6e4e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-lite-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-lite-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.rss_summary_prompt }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "systemMessage": "You will receive a list of AI news articles.  Pick the single most impactful article.  Respond ONLY with plain tweet text, nothing else. No JSON, no markdown, no code fences, no hashtags, no explanation. Just the tweet text. Maximum 250 characters."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [672, 0],
+      "id": "bcf0decd-d63e-400b-9477-514d1a732134",
+      "name": "Message a model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = items[0].json.content.parts[0].text;\n\nconst tweet = raw\n  .replace(/```/g, '')\n  .replace(/\\n+/g, ' ')\n  .trim()\n  .substring(0, 250);\n\nreturn [{ json: { tweet } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [976, 0],
+      "id": "06aab0a5-c55d-40eb-8543-8ac985006b38",
+      "name": "Parse Tweet"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.tweet }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [1168, 0],
+      "id": "4cd67fa0-8065-4097-ad53-043c339b8929",
+      "name": "Create Tweet",
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_X_OAUTH2_CREDENTIAL_NAME"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [[{"node": "RSS Read", "type": "main", "index": 0}]]
+    },
+    "RSS Read": {
+      "main": [[{"node": "Limit", "type": "main", "index": 0}]]
+    },
+    "Limit": {
+      "main": [[{"node": "Code in JavaScript", "type": "main", "index": 0}]]
+    },
+    "Code in JavaScript": {
+      "main": [[{"node": "Message a model1", "type": "main", "index": 0}]]
+    },
+    "Message a model1": {
+      "main": [[{"node": "Parse Tweet", "type": "main", "index": 0}]]
+    },
+    "Parse Tweet": {
+      "main": [[{"node": "Create Tweet", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "REPLACE_WITH_YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID"
+  },
+  "id": "REPLACE_WITH_YOUR_WORKFLOW_ID",
+  "tags": []
+}
