@@ -101,4 +101,4 @@ Credentials and API keys are not included in this repository.
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
 X (Twitter) Free Developer tier allows up to 1,500 tweets per month. For higher volume, a Basic plan is required.  
 To track a different topic, update the `q=` parameter in the RSS Read node URL (e.g. `q=machine+learning`).  
-This project is intended for educational and portfolio purposes.
+This project is intended for educational and test purposes.
