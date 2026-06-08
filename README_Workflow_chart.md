@@ -101,4 +101,4 @@ Credentials and API keys are not included in this repository.
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
 QuickChart is a free and open-source chart API — no API key is required for basic usage.  
 To use different data columns, update the field names in the **Code in JavaScript** node accordingly.  
-This project is intended for educational and portfolio purposes.
+This project is intended for educational and test purposes.
