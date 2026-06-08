@@ -103,4 +103,4 @@ Notifies the user that "Tweet discarded" when they choose to end the process.
 Credentials and API keys are not included in this repository.  
 Replace all `YOUR_*` placeholder values with your own credentials inside n8n.  
 X (Twitter) Free Developer tier allows up to 1,500 tweets per month. For higher volume, a Basic plan is required.  
-This project is intended for educational and portfolio purposes.
+This project is intended for educational and test purposes.
