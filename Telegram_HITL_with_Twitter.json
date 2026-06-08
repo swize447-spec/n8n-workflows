@@ -1,0 +1,237 @@
+{
+  "name": "Telegram HITL",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [0, -96],
+      "id": "33fcef41-a7d0-452a-b1be-b3f411c33b5b",
+      "name": "Telegram Trigger",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_TELEGRAM_BOT_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "You are a tweet writer. Write a tweet based on the user input. Output only the tweet content and nothing else.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [224, -96],
+      "id": "3094384e-14c9-47e2-95eb-5273ffdd10d1",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [304, 128],
+      "id": "79534e29-35b9-4580-98d8-3e88168fa4eb",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_GOOGLE_GEMINI_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "message": "=This is the proposed tweet:\n\n{{ $json.output }}",
+        "responseType": "freeText",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [576, -96],
+      "id": "ac803574-825f-49cb-ab81-b19df7267aa1",
+      "name": "Send message and wait for response",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_TELEGRAM_BOT_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.data.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "true",
+              "description": "The user agrees with the tweet"
+            },
+            {
+              "category": "end",
+              "description": "The user wants to end the process"
+            },
+            {
+              "category": "false",
+              "description": "The user disagrees with the tweet and wants modifications"
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "The user is deciding whether to send a tweet or not. They will provide you with a decision in the form of text.\n\nPlease classify the text provided by the user into one of the following categories: {categories}, and use the provided formatting instructions below. Don't explain, and only output the json."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [800, -96],
+      "id": "9bd080cb-6f84-4a38-a03a-ae1b538f6364",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "The tweet has been sent",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1152, -192],
+      "id": "d591e7cb-60db-4b70-a67d-3eb4c180e343",
+      "name": "Send a text message",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_TELEGRAM_BOT_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Send Tweet",
+        "height": 128,
+        "width": 176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [1152, -224],
+      "typeVersion": 1,
+      "id": "b2d11807-b1e3-44f5-b053-7a14b2564b44",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Tweet discarded",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1152, 0],
+      "id": "514d94ae-cbab-4cc2-83ab-8da0043c6dc0",
+      "name": "Send a text message1",
+      "webhookId": "REPLACE_WITH_YOUR_WEBHOOK_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_TELEGRAM_BOT_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Original Tweet:\n\n{{ $('AI Agent').item.json.output }}\n\n{{ $json.data.text }}",
+        "options": {
+          "systemMessage": "You are a reviewer agent. You take the initial tweet and the user input, and update the tweet accordingly\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [752, 160],
+      "id": "e88dae3d-a569-47b9-ae93-bc5223ddfdfc",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "resource": "tweet",
+        "text": "={{ $('AI Agent').item.json.output }}"
+      },
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [1392, -192],
+      "id": "f3a1c2d4-e5b6-7890-abcd-ef1234567890",
+      "name": "Create Tweet",
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "YOUR_X_OAUTH2_CREDENTIAL_NAME"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{"node": "AI Agent", "type": "main", "index": 0}]]
+    },
+    "AI Agent": {
+      "main": [[{"node": "Send message and wait for response", "type": "main", "index": 0}]]
+    },
+    "Send message and wait for response": {
+      "main": [[{"node": "Text Classifier", "type": "main", "index": 0}]]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {"node": "Text Classifier", "type": "ai_languageModel", "index": 0},
+          {"node": "AI Agent", "type": "ai_languageModel", "index": 0},
+          {"node": "AI Agent1", "type": "ai_languageModel", "index": 0}
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [{"node": "Send a text message", "type": "main", "index": 0}],
+        [{"node": "Send a text message1", "type": "main", "index": 0}],
+        [{"node": "AI Agent1", "type": "main", "index": 0}]
+      ]
+    },
+    "Send a text message": {
+      "main": [[{"node": "Create Tweet", "type": "main", "index": 0}]]
+    },
+    "AI Agent1": {
+      "main": [[{"node": "Send message and wait for response", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "REPLACE_WITH_YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "REPLACE_WITH_YOUR_INSTANCE_ID"
+  },
+  "id": "REPLACE_WITH_YOUR_WORKFLOW_ID",
+  "tags": []
+}
